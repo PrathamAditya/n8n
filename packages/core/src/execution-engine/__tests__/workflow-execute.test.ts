@@ -179,7 +179,7 @@ describe('WorkflowExecute', () => {
 				const executionData = await workflowExecute.run({ workflow: workflowInstance });
 
 				const result = await waitPromise.promise;
-
+				console.log(result);
 				// Check if the data from WorkflowExecute is identical to data received
 				// by the webhooks
 				expect(executionData).toEqual(result);
@@ -200,7 +200,6 @@ describe('WorkflowExecute', () => {
 						return toMap.map((data) => data!.map((entry) => entry.json));
 					});
 
-					// expect(resultData).toEqual(testData.output.nodeData[nodeName]);
 					expect(resultData).toEqual(testData.output.nodeData[nodeName]);
 				}
 
@@ -1599,10 +1598,13 @@ describe('WorkflowExecute', () => {
 
 			expect(nodeSuccessData[0]).toEqual([
 				{
-					json: { additionalData: 'preserved', error: 'Test error' },
+					json: { additionalData: 'preserved', error: 'Test error', execution_status: 'success' },
 					pairedItem: { item: 0, input: 0 },
 				},
-				{ json: { regularData: 'success' }, pairedItem: { item: 1, input: 0 } },
+				{
+					json: { regularData: 'success', execution_status: 'success' },
+					pairedItem: { item: 1, input: 0 },
+				},
 			]);
 			expect(nodeSuccessData[1]).toEqual([]);
 		});
@@ -1629,6 +1631,7 @@ describe('WorkflowExecute', () => {
 						error: 'Error occurred',
 						message: 'Error details',
 						someData: 'test',
+						execution_status: 'error',
 					},
 					pairedItem: { item: 0, input: 0 },
 				},
@@ -1653,7 +1656,7 @@ describe('WorkflowExecute', () => {
 			expect(nodeSuccessData[0]).toEqual([]);
 			expect(nodeSuccessData[1]).toEqual([
 				{
-					json: { someData: 'test', error: 'Test error' },
+					json: { someData: 'test', error: 'Test error', execution_status: 'error' },
 					pairedItem: [
 						{ item: 0, input: 0 },
 						{ item: 1, input: 1 },
@@ -1661,7 +1664,6 @@ describe('WorkflowExecute', () => {
 				},
 			]);
 		});
-
 		test('should route multiple error items correctly', () => {
 			const nodeSuccessData: INodeExecutionData[][] = [
 				[
@@ -1681,11 +1683,11 @@ describe('WorkflowExecute', () => {
 			expect(nodeSuccessData[1]).toEqual([]);
 			expect(nodeSuccessData[0]).toEqual([
 				{
-					json: { error: 'Error 1', data: 'preserved1' },
+					json: { error: 'Error 1', data: 'preserved1', execution_status: 'success' },
 					pairedItem: { item: 0, input: 0 },
 				},
 				{
-					json: { error: 'Error 2', data: 'preserved2' },
+					json: { error: 'Error 2', data: 'preserved2', execution_status: 'success' },
 					pairedItem: { item: 1, input: 0 },
 				},
 			]);
@@ -1709,7 +1711,7 @@ describe('WorkflowExecute', () => {
 			expect(nodeSuccessData[0]).toEqual([]);
 			expect(nodeSuccessData[1]).toEqual([
 				{
-					json: { someData: 'test', error: 'Test error' },
+					json: { someData: 'test', error: 'Test error', execution_status: 'error' },
 					pairedItem: [
 						{ item: 0, input: 0 },
 						{ item: 1, input: 1 },
@@ -1727,8 +1729,44 @@ describe('WorkflowExecute', () => {
 
 			expect(nodeSuccessData[0]).toEqual([]);
 			expect(nodeSuccessData[1]).toEqual([
-				{ json: {}, error: { message: 'Test error' } as NodeApiError },
+				{ json: { execution_status: 'error' }, error: { message: 'Test error' } as NodeApiError },
 			]);
+		});
+
+		test('should tag execution_status as "error" on error items', () => {
+			const nodeSuccessData: INodeExecutionData[][] = [
+				[
+					{
+						json: { error: 'Test error' },
+						pairedItem: { item: 0, input: 0 },
+					},
+					{
+						json: { regularData: 'success' },
+						pairedItem: { item: 1, input: 0 },
+					},
+				],
+			];
+
+			workflowExecute.handleNodeErrorOutput(workflow, executionData, nodeSuccessData, 0);
+
+			expect(nodeSuccessData[0][0].json.execution_status).toBe('success');
+			expect(nodeSuccessData[1][0].json.execution_status).toBe('error');
+		});
+
+		test('should tag execution_status as "success" when no error items exist', () => {
+			const nodeSuccessData: INodeExecutionData[][] = [
+				[
+					{
+						json: { regularData: 'all good' },
+						pairedItem: { item: 0, input: 0 },
+					},
+				],
+			];
+
+			workflowExecute.handleNodeErrorOutput(workflow, executionData, nodeSuccessData, 0);
+
+			expect(nodeSuccessData[0][0].json.execution_status).toBe('success');
+			expect(nodeSuccessData[1]).toHaveLength(0);
 		});
 	});
 
