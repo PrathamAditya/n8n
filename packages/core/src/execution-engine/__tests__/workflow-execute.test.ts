@@ -1678,6 +1678,49 @@ describe('WorkflowExecute', () => {
 				},
 			]);
 		});
+
+		test('should not overwrite execution_status from paired item data', () => {
+			const nodeSuccessData: INodeExecutionData[][] = [
+				[
+					{
+						json: { error: 'Test error' },
+						pairedItem: { item: 0, input: 0 },
+					},
+				],
+			];
+
+			const customRunExecutionData = createRunExecutionData({
+				resultData: {
+					runData: {
+						previousNode: [
+							{
+								data: {
+									main: [[{ json: { execution_status: 'custom_value' } }]],
+								},
+								source: [],
+								startTime: 0,
+								executionIndex: 0,
+								executionTime: 0,
+							},
+						],
+					},
+				},
+			});
+
+			const customWorkflowExecute = new WorkflowExecute(
+				mock<IWorkflowExecuteAdditionalData>({
+					webhookWaitingBaseUrl: 'http://localhost:5678/webhook-waiting',
+					formWaitingBaseUrl: 'http://localhost:5678/form-waiting',
+				}),
+				'manual',
+				customRunExecutionData,
+			);
+
+			customWorkflowExecute.handleNodeErrorOutput(workflow, executionData, nodeSuccessData, 0);
+
+			expect(nodeSuccessData[1][0].json.execution_status).toBe('custom_value');
+		});
+
 		test('should route multiple error items correctly', () => {
 			const nodeSuccessData: INodeExecutionData[][] = [
 				[

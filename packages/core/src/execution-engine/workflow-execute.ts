@@ -2558,7 +2558,6 @@ export class WorkflowExecute {
 								? item.pairedItem[0]
 								: item.pairedItem
 							: undefined;
-
 					if (executionData.source === null || pairedItemData === undefined) {
 						errorItems.push({
 							...item,
@@ -2569,15 +2568,12 @@ export class WorkflowExecute {
 						});
 					} else {
 						const pairedItemInputIndex = pairedItemData.input || 0;
-
 						const sourceData = executionData.source[NodeConnectionTypes.Main][pairedItemInputIndex];
-
 						const constPairedItem = dataProxy.$getPairedItem(
 							sourceData!.previousNode,
 							sourceData,
 							pairedItemData,
 						);
-
 						if (constPairedItem === null) {
 							errorItems.push({
 								...item,
@@ -2587,12 +2583,14 @@ export class WorkflowExecute {
 								},
 							});
 						} else {
+							const pairedJson = constPairedItem.json ?? {};
 							errorItems.push({
 								...item,
 								json: {
-									...constPairedItem.json,
+									...pairedJson,
 									...item.json,
-									...(!('execution_status' in item.json) && { execution_status: 'error' }),
+									...(!('execution_status' in item.json) &&
+										!('execution_status' in pairedJson) && { execution_status: 'error' }),
 								},
 							});
 						}
