@@ -1638,6 +1638,20 @@ describe('WorkflowExecute', () => {
 			]);
 		});
 
+		test('should not overwrite existing execution_status field', () => {
+			const nodeSuccessData: INodeExecutionData[][] = [
+				[
+					{
+						json: { execution_status: 'custom_value', regularData: 'test' },
+						pairedItem: { item: 0, input: 0 },
+					},
+				],
+			];
+
+			workflowExecute.handleNodeErrorOutput(workflow, executionData, nodeSuccessData, 0);
+			expect(nodeSuccessData[0][0].json.execution_status).toBe('custom_value');
+		});
+
 		test('should preserve pairedItem data when routing errors', () => {
 			const nodeSuccessData: INodeExecutionData[][] = [
 				[

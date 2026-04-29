@@ -2560,7 +2560,13 @@ export class WorkflowExecute {
 							: undefined;
 
 					if (executionData.source === null || pairedItemData === undefined) {
-						errorItems.push({ ...item, json: { ...item.json, execution_status: 'error' } });
+						errorItems.push({
+							...item,
+							json: {
+								...item.json,
+								...(!('execution_status' in item.json) && { execution_status: 'error' }),
+							},
+						});
 					} else {
 						const pairedItemInputIndex = pairedItemData.input || 0;
 
@@ -2573,20 +2579,32 @@ export class WorkflowExecute {
 						);
 
 						if (constPairedItem === null) {
-							errorItems.push({ ...item, json: { ...item.json, execution_status: 'error' } });
+							errorItems.push({
+								...item,
+								json: {
+									...item.json,
+									...(!('execution_status' in item.json) && { execution_status: 'error' }),
+								},
+							});
 						} else {
 							errorItems.push({
 								...item,
 								json: {
 									...constPairedItem.json,
 									...item.json,
-									execution_status: 'error',
+									...(!('execution_status' in item.json) && { execution_status: 'error' }),
 								},
 							});
 						}
 					}
 				} else {
-					successItems.push({ ...item, json: { ...item.json, execution_status: 'success' } });
+					successItems.push({
+						...item,
+						json: {
+							...item.json,
+							...(!('execution_status' in item.json) && { execution_status: 'success' }),
+						},
+					});
 				}
 			}
 
